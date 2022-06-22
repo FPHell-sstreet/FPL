@@ -100,7 +100,7 @@ $(document).ready( function () {
         $(this).removeClass("substitute-in");
     });     
 
-    $(document).on("click", 'img', function(event) {    
+    $(document).on("click", '.shirt', function(event) {    
         RemoveSelection("substitute-out");  
 
         if($(this).attr('src') != 'assets/images/removed.png')
