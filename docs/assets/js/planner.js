@@ -116,10 +116,11 @@ $(document).ready( function () {
                 //Change Status
                 $('.status').text($(this).attr('playername')+' has been removed from your squad');
                 $('.status').removeAttr('hidden');                
-                DatatableFilter();
-                dataTables.columns(0).search($(this).attr('position'));              
-                dataTables.draw();
                 TeamArr = [];
+                UpdateTeamIDs();         
+                DatatableFilter();
+                dataTables.columns(0).search($(this).attr('position'));       
+                dataTables.draw();
             }
         }
         else
@@ -141,6 +142,15 @@ $(document).ready( function () {
         if(playerID !== 0)
         {
             var data = dataTables.row(this).data();
+            const playerArray = data[0].split("<br>");             
+
+            NoTeam = $("img[playerteam="+playerArray[1].substring(0,3)+"]").length;
+            if(NoTeam==3)
+            {
+                OpenDialog(playerArray[0],"Too many players selected from one team");
+                return;
+            } 
+
             var InTeamPrice = parseFloat(0.0);
 
             //check if player was in original team
@@ -151,12 +161,12 @@ $(document).ready( function () {
                     InTeamPrice = item[1];
                 }
             });
-            
-            const playerArray = data[0].split("<br>");          
+                      
             $('#'+playerID+' .playername').text(playerArray[0]);            
             $('#'+playerID+' img').attr('player-id', data[3]);
             $('#'+playerID+' .playerprice').text(data[1]);
             $('#'+playerID+' img').attr('sell-price', data[1]);
+            $('#'+playerID+' img').attr('playerteam', playerArray[1].substring(0,3));
             $('#'+playerID+' img').attr('position', playerArray[1].substring(playerArray[1].length - 3, playerArray[1].length));
             $('#'+playerID+' img').attr('src', 'assets/images/'+playerArray[1].substring(0,3)+'.png');
             $('#'+playerID+' img').attr('playername', playerArray[0]);              
@@ -218,7 +228,7 @@ $(document).ready( function () {
         {
             var data = dataTables.row(this).data();
             const playerArray = data[0].split("<br>");
-            OpenDialog(playerArray[0]);
+            OpenDialog(playerArray[0], "You already have the maxiumum number of players");
         }
     });
 
@@ -401,15 +411,17 @@ $(document).ready( function () {
         playerID = 0;     
     };
 
-    function OpenDialog(playername) 
+    function OpenDialog(playername, text) 
     {
-        $( "#dialog-noplayer" ).dialog({
+        $("#dialog").html('<span class="dialog-warning">'+ text +'</span>')
+
+        $( "#dialog" ).dialog({
             modal: true,
             title: "Selected: " +playername,
             width: "500",
             open: function (event, ui) {
                 $('.ui-widget-overlay').bind('click', function () {
-                    $("#dialog-noplayer").dialog('close');
+                    $("#dialog").dialog('close');
                 });
             }            
     });
