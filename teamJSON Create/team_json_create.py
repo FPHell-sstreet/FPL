@@ -72,6 +72,7 @@ for ind in merged_data.index:
     merged_data.at[ind, 'selling_price'] = merged_data.at[ind, 'now_cost'] - merged_data.at[ind, 'cost_change_start']
     merged_data.at[ind, 'purchase_price'] = merged_data.at[ind, 'now_cost'] - merged_data.at[ind, 'cost_change_start']
     team_value = team_value + merged_data.at[ind, 'now_cost']
+    
     if len(transfers.index) != 0:
         for ind2 in transfers.index:
             if (transfers[ind2, 'event'] not in weeks_ignore):
@@ -86,7 +87,18 @@ for ind in merged_data.index:
                 merged_data.at[ind, 'selling_price'] = transfers[ind2, 'element_in_cost'] + pricediff
                 merged_data.at[ind, 'purchase_price'] = transfers[ind2, 'element_in_cost']
                 team_value = team_value - pricediff
-                break
+                break   
+    else:
+        pricediff = merged_data.at[ind, 'cost_change_start']
+        if (pricediff >= 2):
+            if (pricediff % 2) == 0:
+                pricediff = merged_data.at[ind, 'cost_change_start']
+            else:
+                pricediff = merged_data.at[ind, 'cost_change_start'] - 1
+        else:
+            pricediff = 0     
+        merged_data.at[ind, 'selling_price'] = merged_data.at[ind, 'selling_price'] + pricediff
+        merged_data.at[ind, 'purchase_price'] = merged_data.at[ind, 'purchase_price']  
 
 # Update Team value
 team.update({'value':int(team_value)})
@@ -112,4 +124,4 @@ with open(os.path.join(sys.path[0],'team.json'), 'w') as f:
     json.dump({'picks' : merged_dict, 'chips': chips_dict, 'transfers' : team}, f)
 
 # Uncomment below for testing
-# print(json.dumps({'picks' : merged_dict, 'chips': chips_dict, 'transfers' : team}))
+#print(json.dumps({'picks' : merged_dict, 'chips': chips_dict, 'transfers' : team}))
