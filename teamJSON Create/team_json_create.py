@@ -67,16 +67,16 @@ for ind in merged_data.index:
     merged_data.at[ind, 'purchase_price'] = merged_data.at[ind, 'now_cost'] - merged_data.at[ind, 'cost_change_start']
     if len(transfers.index) != 0:
         for ind2 in transfers.index:
-            if (transfers[ind2, 'event'] not in weeks_ignore):
-                pricediff = merged_data[ind, 'now_cost'] - transfers[ind2, 'element_in_cost']
+            if (transfers.at[ind2, 'event'] not in weeks_ignore):
+                pricediff = merged_data.at[ind, 'now_cost'] - transfers.at[ind2, 'element_in_cost']
                 if (pricediff > 2):
                     if (pricediff % 2) == 0:
-                        pricediff = merged_data[ind, 'now_cost'] - transfers[ind2, 'element_in_cost']
+                        pricediff = merged_data.at[ind, 'now_cost'] - transfers.at[ind2, 'element_in_cost']
                     else:
-                        pricediff = merged_data[ind, 'now_cost'] - transfers[ind2, 'element_in_cost'] - 1
+                        pricediff = merged_data.at[ind, 'now_cost'] - transfers.at[ind2, 'element_in_cost'] - 1
                 else:
                     pricediff = 0
-                merged_data.at[ind, 'selling_price'] = transfers[ind2, 'element_in_cost'] + pricediff
+                merged_data.at[ind, 'selling_price'] = transfers.at[ind2, 'element_in_cost'] + pricediff
                 break
 
 #Get team value and update dict
