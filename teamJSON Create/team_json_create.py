@@ -108,8 +108,8 @@ else:
 chips_dict = chips_pd.to_dict(orient = 'records')
 
 #create json file
-#with open(os.path.join(sys.path[0],'team.json'), 'w') as f:
-#    json.dump({'picks' : merged_dict, 'chips': chips_dict, 'transfers' : team}, f)
+with open(os.path.join(sys.path[0],'team.json'), 'w') as f:
+    json.dump({'picks' : merged_dict, 'chips': chips_dict, 'transfers' : team}, f)
 
 # Uncomment below for testing
-print(json.dumps({'picks' : merged_dict, 'chips': chips_dict, 'transfers' : team}))
+# print(json.dumps({'picks' : merged_dict, 'chips': chips_dict, 'transfers' : team}))
