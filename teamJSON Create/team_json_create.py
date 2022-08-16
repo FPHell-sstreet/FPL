@@ -8,6 +8,8 @@ import sys
 team_id = 4545
 # set below to available or active
 wildcard = 'available'
+# set below if you have made any transfers this gw
+transfers_made = 0
 
 def get_player_data():
     r = requests.get('https://fantasy.premierleague.com/api/bootstrap-static/')
@@ -22,10 +24,10 @@ def get_picks_data(team_id, gw):
     fpl_data = r.json()
     picks_data = pd.DataFrame(fpl_data['picks'])  
     if (fpl_data['entry_history']['event'] == 1 or fpl_data['active_chip'] == 'freehit' or fpl_data['active_chip'] == 'wildcard' or fpl_data['entry_history']['event_transfers'] >= 1):
-          limit = 1
+        limit = 1
     else:
         limit = 2
-    team_dict = {'cost': 4, 'status': 'cost', 'limit': limit, 'made': 0, 'bank': fpl_data['entry_history']['bank'], 'value': fpl_data['entry_history']['value']}    
+    team_dict = {'cost': 4, 'status': 'cost', 'limit': limit, 'made': transfers_made, 'bank': fpl_data['entry_history']['bank'], 'value': fpl_data['entry_history']['value']}    
 
     return picks_data, team_dict
 
@@ -50,11 +52,12 @@ transfers = get_transfers_data(team_id)
 merged_data = picks.merge(players, how='left', left_on='element', right_on='id')
 merged_data.insert(loc=2, column='selling_price', value=0)
 merged_data.insert(loc=4, column='purchase_price', value=0)
-del merged_data['id']
 
+# Get current gameweek
 events = events.loc[events['is_current'] == 1]
 gameweek = events.iloc[0]['id']
 
+# Ignore freehit week(s)
 weeks_ignore = []
 if (gameweek > 1):    
     history = get_chips_data(team_id)
@@ -62,13 +65,17 @@ if (gameweek > 1):
         if (history[ind, 'name'] == 'freehit'):
             weeks_ignore.append(history[ind, 'event'])
 
+team_value = 0
+
+# Calculate purchase and selling price
 for ind in merged_data.index:
     merged_data.at[ind, 'selling_price'] = merged_data.at[ind, 'now_cost'] - merged_data.at[ind, 'cost_change_start']
     merged_data.at[ind, 'purchase_price'] = merged_data.at[ind, 'now_cost'] - merged_data.at[ind, 'cost_change_start']
+    team_value = team_value + merged_data.at[ind, 'now_cost']
     if len(transfers.index) != 0:
         for ind2 in transfers.index:
             if (transfers[ind2, 'event'] not in weeks_ignore):
-                pricediff = merged_data[ind, 'now_cost'] - transfers[ind2, 'element_in_cost']
+                pricediff = merged_data[ind, 'now_cost'] - transfers[ind2, 'element_in_cost']                
                 if (pricediff > 2):
                     if (pricediff % 2) == 0:
                         pricediff = merged_data[ind, 'now_cost'] - transfers[ind2, 'element_in_cost']
@@ -77,16 +84,19 @@ for ind in merged_data.index:
                 else:
                     pricediff = 0
                 merged_data.at[ind, 'selling_price'] = transfers[ind2, 'element_in_cost'] + pricediff
+                merged_data.at[ind, 'purchase_price'] = transfers[ind2, 'element_in_cost']
+                team_value = team_value - pricediff
                 break
 
-#Get team value and update dict
-team_value = merged_data['now_cost'].sum()
+# Update Team value
 team.update({'value':int(team_value)})
 
 del merged_data['now_cost']
 del merged_data['cost_change_start']
+del merged_data['id']
 merged_dict = merged_data.to_dict(orient = 'records')
 
+# Add wildcard entry, needed for solver
 chips_pd = pd.DataFrame()
 if (wildcard == 'available'):
     chips_pd.insert(0, 'status_for_entry', ['available'])
@@ -98,5 +108,8 @@ else:
 chips_dict = chips_pd.to_dict(orient = 'records')
 
 #create json file
-with open(os.path.join(sys.path[0],'team.json'), 'w') as f:
-    json.dump({'picks' : merged_dict, 'chips': chips_dict, 'transfers' : team}, f)
+#with open(os.path.join(sys.path[0],'team.json'), 'w') as f:
+#    json.dump({'picks' : merged_dict, 'chips': chips_dict, 'transfers' : team}, f)
+
+# Uncomment below for testing
+print(json.dumps({'picks' : merged_dict, 'chips': chips_dict, 'transfers' : team}))
