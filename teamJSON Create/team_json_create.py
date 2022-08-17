@@ -45,17 +45,18 @@ def get_transfers_data(team_id):
 
     return transfer_data
 
-picks, team = get_picks_data(team_id, 1)
 players, events = get_player_data()
+
+# Get current gameweek
+events = events.loc[events['is_current'] == 1]
+gameweek = events.iloc[0]['id']
+
+picks, team = get_picks_data(team_id, gameweek)
 transfers = get_transfers_data(team_id)
 
 merged_data = picks.merge(players, how='left', left_on='element', right_on='id')
 merged_data.insert(loc=2, column='selling_price', value=0)
 merged_data.insert(loc=4, column='purchase_price', value=0)
-
-# Get current gameweek
-events = events.loc[events['is_current'] == 1]
-gameweek = events.iloc[0]['id']
 
 # Ignore freehit week(s)
 weeks_ignore = []
@@ -124,4 +125,4 @@ with open(os.path.join(sys.path[0],'team.json'), 'w') as f:
     json.dump({'picks' : merged_dict, 'chips': chips_dict, 'transfers' : team}, f)
 
 # Uncomment below for testing
-#print(json.dumps({'picks' : merged_dict, 'chips': chips_dict, 'transfers' : team}))
+# print(json.dumps({'picks' : merged_dict, 'chips': chips_dict, 'transfers' : team}))
