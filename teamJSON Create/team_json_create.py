@@ -74,32 +74,33 @@ for ind in merged_data.index:
     merged_data.at[ind, 'purchase_price'] = merged_data.at[ind, 'now_cost'] - merged_data.at[ind, 'cost_change_start']
     team_value = team_value + merged_data.at[ind, 'now_cost']
     
+    pricediff = merged_data.at[ind, 'cost_change_start']
+    if (pricediff >= 2):
+        if (pricediff % 2) == 0:
+            pricediff = merged_data.at[ind, 'cost_change_start']
+        else:
+            pricediff = merged_data.at[ind, 'cost_change_start'] - 1
+    else:
+        pricediff = 0     
+    merged_data.at[ind, 'selling_price'] = merged_data.at[ind, 'selling_price'] + pricediff/2
+    merged_data.at[ind, 'purchase_price'] = merged_data.at[ind, 'purchase_price']  
+
     if len(transfers.index) != 0:
         for ind2 in transfers.index:
-            if (transfers[ind2, 'event'] not in weeks_ignore):
-                pricediff = merged_data[ind, 'now_cost'] - transfers[ind2, 'element_in_cost']                
-                if (pricediff > 2):
-                    if (pricediff % 2) == 0:
-                        pricediff = merged_data[ind, 'now_cost'] - transfers[ind2, 'element_in_cost']
+            if (transfers.at[ind2, 'event'] not in weeks_ignore):
+                if (transfers.at[ind2, 'element_in'] == merged_data.at[ind, 'element']):
+                    pricediff = merged_data.at[ind, 'now_cost'] - transfers.at[ind2, 'element_in_cost']                
+                    if (pricediff > 2):
+                        if (pricediff % 2) == 0:
+                            pricediff = merged_data.at[ind, 'now_cost'] - transfers.at[ind2, 'element_in_cost']
+                        else:
+                            pricediff = merged_data.at[ind, 'now_cost'] - transfers.at[ind2, 'element_in_cost'] - 1
                     else:
-                        pricediff = merged_data[ind, 'now_cost'] - transfers[ind2, 'element_in_cost'] - 1
-                else:
-                    pricediff = 0
-                merged_data.at[ind, 'selling_price'] = transfers[ind2, 'element_in_cost'] + pricediff
-                merged_data.at[ind, 'purchase_price'] = transfers[ind2, 'element_in_cost']
-                team_value = team_value - pricediff
-                break   
-    else:
-        pricediff = merged_data.at[ind, 'cost_change_start']
-        if (pricediff >= 2):
-            if (pricediff % 2) == 0:
-                pricediff = merged_data.at[ind, 'cost_change_start']
-            else:
-                pricediff = merged_data.at[ind, 'cost_change_start'] - 1
-        else:
-            pricediff = 0     
-        merged_data.at[ind, 'selling_price'] = merged_data.at[ind, 'selling_price'] + pricediff
-        merged_data.at[ind, 'purchase_price'] = merged_data.at[ind, 'purchase_price']  
+                        pricediff = 0
+                    merged_data.at[ind, 'selling_price'] = transfers.at[ind2, 'element_in_cost'] + pricediff/2
+                    merged_data.at[ind, 'purchase_price'] = transfers.at[ind2, 'element_in_cost']
+                    team_value = team_value - pricediff
+                    break   
 
 # Update Team value
 team.update({'value':int(team_value)})
@@ -122,7 +123,7 @@ chips_dict = chips_pd.to_dict(orient = 'records')
 
 #create json file
 with open(os.path.join(sys.path[0],'team.json'), 'w') as f:
-    json.dump({'picks' : merged_dict, 'chips': chips_dict, 'transfers' : team}, f)
+    json.dump({'picks' : merged_dict, 'chips': chips_dict, 'transfers' : team}, f, sort_keys=True, indent=4)
 
 # Uncomment below for testing
 # print(json.dumps({'picks' : merged_dict, 'chips': chips_dict, 'transfers' : team}))
