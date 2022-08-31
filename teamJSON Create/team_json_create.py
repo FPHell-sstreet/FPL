@@ -90,7 +90,7 @@ for ind in merged_data.index:
             if (transfers.at[ind2, 'event'] not in weeks_ignore):
                 if (transfers.at[ind2, 'element_in'] == merged_data.at[ind, 'element']):
                     pricediff = merged_data.at[ind, 'now_cost'] - transfers.at[ind2, 'element_in_cost']                
-                    if (pricediff > 2):
+                    if (pricediff >= 2):
                         if (pricediff % 2) == 0:
                             pricediff = merged_data.at[ind, 'now_cost'] - transfers.at[ind2, 'element_in_cost']
                         else:
@@ -99,11 +99,11 @@ for ind in merged_data.index:
                         pricediff = 0
                     merged_data.at[ind, 'selling_price'] = transfers.at[ind2, 'element_in_cost'] + pricediff/2
                     merged_data.at[ind, 'purchase_price'] = transfers.at[ind2, 'element_in_cost']
-                    team_value = team_value - pricediff
+                    team_value = team_value + pricediff/2
                     break   
 
 # Update Team value
-team.update({'value':int(team_value)})
+team.update({'value':int(team_value)-int(team['bank'])})
 
 del merged_data['now_cost']
 del merged_data['cost_change_start']
