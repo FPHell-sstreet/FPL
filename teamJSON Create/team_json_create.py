@@ -1,3 +1,4 @@
+# Version 1.6 31-08-22
 import requests
 import pandas as pd
 import json
@@ -22,13 +23,22 @@ def get_player_data():
 def get_picks_data(team_id, gw):
     r = requests.get(f'https://fantasy.premierleague.com/api/entry/{team_id}/event/{gw}/picks/')
     fpl_data = r.json()
-    picks_data = pd.DataFrame(fpl_data['picks'])  
-    if (fpl_data['entry_history']['event'] == 1 or fpl_data['active_chip'] == 'freehit' or fpl_data['active_chip'] == 'wildcard' or fpl_data['entry_history']['event_transfers'] >= 1):
-        limit = 1
-    else:
-        limit = 2
-    team_dict = {'cost': 4, 'status': 'cost', 'limit': limit, 'made': transfers_made, 'bank': fpl_data['entry_history']['bank'], 'value': fpl_data['entry_history']['value']}    
+    picks_data = pd.DataFrame(fpl_data['picks'])
+    
+    # Get available transfers
+    team_events = get_history_data(team_id)
+    transfers = 0
+    for ind in team_events.index:
+        transfers = transfers + 1
+        transfers = transfers - team_events.at[ind, 'event_transfers']
+        if (transfers > 2):
+            transfers = 2
 
+    if (fpl_data['active_chip'] == 'freehit' or fpl_data['active_chip'] == 'wildcard'):
+        transfers = 1
+
+    team_dict = {'cost': 4, 'status': 'cost', 'limit': int(transfers), 'made': transfers_made, 'bank': fpl_data['entry_history']['bank'], 'value': fpl_data['entry_history']['value']}    
+    
     return picks_data, team_dict
 
 def get_chips_data(team_id):
@@ -37,6 +47,13 @@ def get_chips_data(team_id):
     chips_data = pd.DataFrame(fpl_data['chips'])
 
     return chips_data
+
+def get_history_data(team_id):
+    r = requests.get(f'https://fantasy.premierleague.com/api/entry/{team_id}/history/')
+    fpl_data = r.json()
+    history_data = pd.DataFrame(fpl_data['current'])
+
+    return history_data    
 
 def get_transfers_data(team_id):
     r = requests.get(f'https://fantasy.premierleague.com/api/entry/{team_id}/transfers/')
@@ -63,8 +80,8 @@ weeks_ignore = []
 if (gameweek > 1):    
     history = get_chips_data(team_id)
     for ind in history.index:
-        if (history[ind, 'name'] == 'freehit'):
-            weeks_ignore.append(history[ind, 'event'])
+        if (history.at[ind, 'name'] == 'freehit'):
+            weeks_ignore.append(history.at[ind, 'event'])
 
 team_value = 0
 
